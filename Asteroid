@@ -6,7 +6,7 @@ public class Asteroid : MonoBehaviour
     // ===============================
     // === ASTEROID PARAMETERS ===
     // ===============================
-
+[SerializeField] private ParticleSystem destroyedParticles;
     // Defines the current asteroid size (3 = large, 2 = medium, 1 = small)
     public int size = 3;
 
@@ -70,6 +70,9 @@ public class Asteroid : MonoBehaviour
                     newAsteroid.gameManager = gameManager;
                 }
             }
+
+                //Spawn particles on destruction
+                Instantiate(destroyedParticles, transform.position, Quaternion.identity);
 
             // Destroy this asteroid (it breaks apart or disappears)
             Destroy(gameObject);
