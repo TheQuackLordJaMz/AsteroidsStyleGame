@@ -15,7 +15,7 @@ public class Player : MonoBehaviour
     [Header("Object Referances")]
     [SerializeField] private Transform bulletSpawn;         // Transform position where bullets are spawned
     [SerializeField] private Rigidbody2D bulletPrefab;      // Prefab for bullet (must have a Rigidbody2D component)
-
+    [SerializeField] private ParticleSystem destroyedParticles;
     // ==========================
     // === INTERNAL VARIABLES ===
     // ==========================
@@ -128,6 +128,9 @@ public class Player : MonoBehaviour
 
             // Call GameOver() to restart or end the game
             gameManager.GameOver();
+
+                //Spawn particles on destruction
+                Instantiate(destroyedParticles, transform.position, Quaternion.identity);
 
             // Destroy this player ship
             Destroy(gameObject);
