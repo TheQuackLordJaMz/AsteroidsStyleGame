@@ -1,0 +1,69 @@
+using UnityEngine;
+
+public class ScreenWrap : MonoBehaviour
+{
+    // ==================================================
+    // === PURPOSE ======================================
+    // ==================================================
+    // This script allows an object (like a ship or asteroid)
+    // to wrap around the screen. 
+    // When the object exits one edge of the camera’s view,
+    // it reappears on the opposite side — just like in classic
+    // Asteroids-style games.
+    // ==================================================
+
+
+    private void Update()
+    {
+        // Convert the object's world position (actual scene coordinates)
+        // into viewport coordinates (a normalized 0 → 1 range for both axes).
+        //  (0,0) = bottom-left of the screen, (1,1) = top-right.
+        Vector3 viewportPosition = Camera.main.WorldToViewportPoint(transform.position);
+
+        // We'll use this vector to shift the object's position
+        // if it goes outside the screen boundaries.
+        Vector3 moveAdjustment = Vector3.zero;
+
+        // ============================================
+        // === HORIZONTAL WRAPPING (X AXIS) ============
+        // ============================================
+
+        // If the object moves past the left edge of the screen...
+        if (viewportPosition.x < 0) 
+        {
+            // ...move it to the right side
+            moveAdjustment.x += 1;
+        }
+        // If it moves past the right edge of the screen...
+        else if (viewportPosition.x > 1)
+        {
+            // ...move it to the left side
+            moveAdjustment.x -= 1;
+        }
+
+        // ============================================
+        // === VERTICAL WRAPPING (Y AXIS) ==============
+        // ============================================
+
+        // If the object moves past the bottom of the screen...
+        else if (viewportPosition.y < 0)
+        {
+            // ...move it to the top
+            moveAdjustment.y += 1;
+        }
+        // If it moves past the top of the screen...
+        else if (viewportPosition.y > 1)
+        {
+            // ...move it to the bottom
+            moveAdjustment.y -= 1;
+        }
+
+        // ============================================
+        // === APPLY NEW POSITION =====================
+        // ============================================
+
+        // Convert the adjusted viewport position back into world coordinates,
+        // then assign it to the object’s transform.
+        transform.position = Camera.main.ViewportToWorldPoint(viewportPosition + moveAdjustment);
+    }
+}
