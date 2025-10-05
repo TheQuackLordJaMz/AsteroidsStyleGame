@@ -1,0 +1,121 @@
+using System.Collections;
+using UnityEngine.SceneManagement;
+using UnityEngine;
+
+public class GameManager : MonoBehaviour
+{
+    // ===============================
+    // === GAME STATE & PARAMETERS ===
+    // ===============================
+
+    // Prefab reference for spawning new asteroids
+    // (Set this in the Inspector)
+    [SerializeField] private Asteroid asteroidPrefab;
+
+    // Tracks how many asteroids currently exist in the scene
+    public int asteroidCount = 0;
+
+    // Tracks the current difficulty level or wave number
+    private int level = 0;
+
+    // ===============================
+    // === MAIN UPDATE LOOP ===
+    // ===============================
+
+    private void Update()
+    {
+        // If there are no asteroids left in the scene...
+        if (asteroidCount == 0) 
+        {
+            // Increase difficulty level (each wave gets harder)
+            level++;
+
+            // Calculate number of asteroids to spawn for this level
+            // Pattern: level 1 = 4, level 2 = 6, level 3 = 8, etc.
+            // (Not currently essential for gameplay but kept for flexibility)
+            int numAsteroids = 2 + (2 * level);
+
+            // Spawn the desired number of asteroids
+            for (int i = 0; i < numAsteroids; i++) 
+            {
+                SpawnAsteroid();
+            }
+        }
+    }
+
+    // ===============================
+    // === ASTEROID SPAWNING LOGIC ===
+    // ===============================
+
+    // Handles spawning a single asteroid at a random screen edge
+    void SpawnAsteroid() 
+    {
+        // Randomly choose how far along the edge the asteroid appears (0 = one corner, 1 = opposite corner)
+        float offset = Random.Range(0f, 1f);
+
+        // Initialize spawn position in viewport coordinates (normalized 0–1 range)
+        Vector2 viewportSpawnPosition = Vector2.zero;
+
+        // Randomly choose one of the four screen edges (0=bottom, 1=top, 2=left, 3=right)
+        int edge = Random.Range(0, 4);
+
+        // Assign a spawn position depending on which edge was chosen
+        if (edge == 0) 
+        {
+            // Bottom edge
+            viewportSpawnPosition = new Vector2(offset, 0);
+        }
+        else if (edge == 1)
+        {
+            // Top edge
+            viewportSpawnPosition = new Vector2(offset, 1);
+        }
+        if (edge == 2)
+        {
+            // Left edge
+            viewportSpawnPosition = new Vector2(0, offset);
+        }
+        if (edge == 3)
+        {
+            // Right edge
+            viewportSpawnPosition = new Vector2(1, offset);
+        }
+
+        // Convert from viewport coordinates (0–1 range) to world coordinates in the scene
+        Vector2 worldSpawnPosition = Camera.main.ViewportToWorldPoint(viewportSpawnPosition);
+
+        // Instantiate a new asteroid at that position with no rotation
+        Asteroid asteroid = Instantiate(asteroidPrefab, worldSpawnPosition, Quaternion.identity);
+
+        // Give the asteroid a reference back to this GameManager
+        // (So it can notify the manager when destroyed, etc.)
+        asteroid.gameManager = this;
+    }
+
+    // ===============================
+    // === GAME OVER & RESTART LOGIC ===
+    // ===============================
+
+    // Called when the player’s ship is destroyed
+    public void GameOver() 
+    {
+        // Begin coroutine that handles restart delay
+        StartCoroutine(Restart());
+    }
+
+    // Coroutine that restarts the game after a short delay
+    private IEnumerator Restart() 
+    {
+        // Display a message in the console
+        Debug.Log("Game Over!");
+
+        // Wait for 2 seconds before restarting the scene
+        yield return new WaitForSeconds(2f);
+
+        // Reload the currently active scene to restart gameplay
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+        // Optional: yield null to cleanly exit coroutine
+        yield return null;
+    }
+}
