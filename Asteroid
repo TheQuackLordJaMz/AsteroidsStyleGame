@@ -1,0 +1,78 @@
+// using System;  // Not needed right now since we aren't using any System namespace features
+using UnityEngine;
+
+public class Asteroid : MonoBehaviour
+{
+    // ===============================
+    // === ASTEROID PARAMETERS ===
+    // ===============================
+
+    // Defines the current asteroid size (3 = large, 2 = medium, 1 = small)
+    public int size = 3;
+
+    // Reference to the GameManager (used to update asteroid count, etc.)
+    public GameManager gameManager;
+
+    // ===============================
+    // === INITIALIZATION LOGIC ===
+    // ===============================
+
+    private void Start()
+    {
+        // Scale the asteroid’s size based on its "size" value.
+        // Each smaller asteroid will appear proportionally smaller.
+        transform.localScale = 0.5f * size * Vector3.one;
+
+        // Add random movement when spawned — larger asteroids move slower.
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+
+        // Generate a random direction vector and normalize it so its length = 1.
+        Vector2 direction = new Vector2(Random.value, Random.value).normalized;
+
+        // Calculate a random speed based on asteroid size:
+        //   Large asteroids (size=3) move slower than small ones.
+        float spawnSpeed = Random.Range(4f - size, 5f - size);
+
+        // Apply an instantaneous force (impulse) to give the asteroid movement.
+        rb.AddForce(direction * spawnSpeed, ForceMode2D.Impulse);
+
+        // Register this asteroid with the GameManager (increase the active count).
+        gameManager.asteroidCount++;
+    }
+
+    // ===============================
+    // === COLLISION HANDLING ===
+    // ===============================
+
+    // Triggered when the asteroid collides with another collider set as a trigger
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // Only respond to collisions with bullets for now
+        if (collision.CompareTag("Bullet")) 
+        {
+            // Decrease the active asteroid count in the GameManager
+            gameManager.asteroidCount--;
+
+            // Destroy the bullet so it doesn't continue traveling
+            Destroy(collision.gameObject);
+
+            // If this asteroid is larger than size 1,
+            // spawn two smaller asteroids (each one size smaller)
+            if (size > 1) 
+            {
+                for (int i = 0; i < 2; i++) 
+                {
+                    // Instantiate a new asteroid at the same position with no rotation
+                    Asteroid newAsteroid = Instantiate(this, transform.position, Quaternion.identity);
+
+                    // Assign the smaller size and GameManager reference
+                    newAsteroid.size = size - 1;
+                    newAsteroid.gameManager = gameManager;
+                }
+            }
+
+            // Destroy this asteroid (it breaks apart or disappears)
+            Destroy(gameObject);
+        }
+    }
+}
