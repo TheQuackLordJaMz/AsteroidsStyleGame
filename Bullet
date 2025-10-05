@@ -1,0 +1,12 @@
+using UnityEngine;
+
+public class Bullet : MonoBehaviour
+{
+    //create a bullet for shooting enemies ,it will destroy self on collison and after a set amount of time
+    [SerializeField] private float bulletLifetime = 1f;
+
+    private void Awake()
+    {
+        Destroy(gameObject, bulletLifetime);
+    }
+}
