@@ -1,0 +1,136 @@
+using UnityEngine;
+
+public class Player : MonoBehaviour
+{
+    // ==========================
+    // === CONFIGURABLE VALUES ===
+    // ==========================
+
+    [Header("Ship Parameters")]
+    [SerializeField] private float shipAcceleration = 10f; // How fast the ship accelerates forward when thrusting
+    [SerializeField] private float maxVelocity = 10f;      // Maximum allowed movement speed
+    [SerializeField] private float rotateSpeed = 10f;      // How quickly the ship rotates (degrees per second)
+    [SerializeField] private float bulletSpeed = 8f;       // Initial speed of fired bullets
+
+    [Header("Object Referances")]
+    [SerializeField] private Transform bulletSpawn;         // Transform position where bullets are spawned
+    [SerializeField] private Rigidbody2D bulletPrefab;      // Prefab for bullet (must have a Rigidbody2D component)
+
+    // ==========================
+    // === INTERNAL VARIABLES ===
+    // ==========================
+
+    private Rigidbody2D shipRB;    // Cached reference to this ship’s Rigidbody2D for physics operations
+    private bool isAlive = true;   // Whether the ship is currently alive (controls input/behavior)
+    private bool isAccelerating = false; // Tracks if the player is currently thrusting forward
+
+    // Called once when the object is initialized
+    private void Start()
+    {
+        // Get reference to Rigidbody2D component attached to the same GameObject
+        shipRB = GetComponent<Rigidbody2D>();
+    }
+
+    // Called once per frame (for input and non-physics logic)
+    private void Update()
+    {
+        if (isAlive) 
+        {
+            HandleShipAcceleration(); // Check for thrust input
+            HandleShipRotation();     // Check for rotation input
+            HandleShooting();         // Check for fire input
+        }
+    }
+
+    // Called at fixed intervals (used for physics updates)
+    private void FixedUpdate()
+    {
+        // Increase velocity up to the maximum allowed
+        if (isAlive && isAccelerating)
+        {
+            // Apply force in the ship’s forward direction
+            shipRB.AddForce(shipAcceleration * transform.up);
+
+            // Limit the velocity so it never exceeds maxVelocity
+            shipRB.linearVelocity = Vector2.ClampMagnitude(shipRB.linearVelocity, maxVelocity);
+        }
+    }
+
+    // =======================================
+    // === MOVEMENT INPUT & CONTROL METHODS ===
+    // =======================================
+
+    // Checks if the up arrow is held to enable acceleration
+    void HandleShipAcceleration() 
+    {
+        isAccelerating = Input.GetKey(KeyCode.UpArrow);
+    }
+
+    // Handles player rotation input (turning left/right)
+    void HandleShipRotation() 
+    {
+        // Rotate left
+        if (Input.GetKey(KeyCode.LeftArrow)) 
+        {
+            transform.Rotate(rotateSpeed * Time.deltaTime * transform.forward);
+        }
+        // Rotate right
+        else if (Input.GetKey(KeyCode.RightArrow))
+        {
+            transform.Rotate(-rotateSpeed * Time.deltaTime * transform.forward);
+        }
+    }
+
+    // =======================================
+    // === SHOOTING & BULLET SPAWN LOGIC ===
+    // =======================================
+
+    void HandleShooting() 
+    {
+        // Create the bullet when the spacebar is pressed
+        if (Input.GetKeyDown(KeyCode.Space)) 
+        {
+            // Instantiate the bullet at the spawn point, matching ship’s rotation
+            Rigidbody2D bullet = Instantiate(bulletPrefab, bulletSpawn.position, transform.rotation);
+
+            // Inherit velocity only in the ship's forward direction
+            // This calculates how much of the ship’s current velocity is aligned with its facing direction
+            Vector2 shipVelocity = shipRB.linearVelocity;
+            Vector2 shipDirection = transform.up;
+            float shipForwardSpeed = Vector2.Dot(shipVelocity, shipDirection);
+
+            // Prevent negative forward speed (don’t inherit backward motion)
+            if(shipForwardSpeed < 0)
+            {
+                shipForwardSpeed = 0;
+            }
+
+            // Apply inherited forward speed to bullet
+            bullet.linearVelocity = shipDirection * shipForwardSpeed;
+
+            // Add additional forward impulse to fire the bullet
+            bullet.AddForce(bulletSpeed * transform.up, ForceMode2D.Impulse);
+        }
+    }
+
+    // =======================================
+    // === COLLISION HANDLING ===
+    // =======================================
+
+    // Triggered when this object enters a trigger collider
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // Check if the collider belongs to an asteroid
+        if (collision.CompareTag("Asteroid")) 
+        {
+            // Find a reference to the GameManager in the scene
+            GameManager gameManager = FindAnyObjectByType<GameManager>();
+
+            // Call GameOver() to restart or end the game
+            gameManager.GameOver();
+
+            // Destroy this player ship
+            Destroy(gameObject);
+        }
+    }
+}
